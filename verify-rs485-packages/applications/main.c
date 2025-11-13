@@ -25,7 +25,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-   rt_thread_t tid = RT_NULL;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -50,6 +49,21 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  rt_device_t rs485_dev = rt_device_find("rs485-1");
+  if (rs485_dev == RT_NULL) {
+      rt_kprintf("RS485 device not found!\n");
+      return -1;
+  }
+  if (rt_device_open(rs485_dev, RT_DEVICE_FLAG_RDWR) != RT_EOK) {
+      rt_kprintf("RS485 open failed!\n");
+      return -1;
+  }
+  rs485_dev_t *pdev = (rs485_dev_t *)rs485_dev;
+  rs485_inst_t *rs485_hinst = pdev->hinst;
+  rs485_dev_tmo_param_t tmo = { .ack_tmo_ms = 500, .byte_tmo_ms = 10 };
+  rt_device_control(rs485_dev, RS485_CTRL_SET_TMO, &tmo);
+
+  rt_uint8_t frame[8] = "Hello!\r\n";
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -57,6 +71,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+      rs485_send(rs485_hinst, frame, 8);
       rt_thread_mdelay(500);
     /* USER CODE BEGIN 3 */
   }
